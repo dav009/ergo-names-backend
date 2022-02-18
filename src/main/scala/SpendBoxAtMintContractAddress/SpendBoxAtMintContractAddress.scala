@@ -1,4 +1,4 @@
-package SpendBoxAtMintContractAddress
+package ergonames.SpendBoxAtMintContractAddress
 
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
 import org.ergoplatform.appkit._
@@ -36,13 +36,32 @@ object SpendBoxAtMintContractAddress {
 
       // Get input (spending) boxes from minting contract address
       val spendingAddress: Address = Address.create(mintingContractAddress)
+
+
+         // Amount to retrieve from nft minting request box - this is essentially collecting payment for the mint
+     val amountToSend: Long = 25000000L - Parameters.MinFee
+      
+      val tx = assembleTransaction(ctx, spendingAddress, ErgoId.create(nftMintRequestBoxId), nftReceiverAddress , senderProver.getAddress(),amountToSend )
+
+      // Sign transaction with prover
+      val signed: SignedTransaction = senderProver.sign(tx)
+
+      // Submit transaction to node
+      val txId: String = ctx.sendTransaction(signed)
+
+      // Return transaction as JSON string
+      signed.toJson(true)
+    })
+    txJson
+  }
+
+    def assembleTransaction(ctx: BlockchainContext, spendingAddress: Address, nftMintRequestBoxId: ErgoId, nftReceiverAddress: Address, senderAddress: Address, amountToSend: Long)= {
       val spendingBoxes: java.util.List[InputBox] = ctx.getUnspentBoxesFor(spendingAddress, 0, 20)
         .stream()
-        .filter(_.getId == ErgoId.create(nftMintRequestBoxId))
+        .filter(_.getId == nftMintRequestBoxId)
         .collect(Collectors.toList())
 
-      // Amount to retrieve from nft minting request box - this is essentially collecting payment for the mint
-      val amountToSend: Long = 25000000L - Parameters.MinFee
+   
 
       // Create unsigned tx builder
       val txB: UnsignedTransactionBuilder = ctx.newTxBuilder
@@ -64,19 +83,10 @@ object SpendBoxAtMintContractAddress {
         .boxesToSpend(spendingBoxes)
         .outputs(newBox)
         .fee(Parameters.MinFee)
-        .sendChangeTo(senderProver.getP2PKAddress)
+        .sendChangeTo(senderAddress.asP2PK())
         .build()
 
-      // Sign transaction with prover
-      val signed: SignedTransaction = senderProver.sign(tx)
-
-      // Submit transaction to node
-      val txId: String = ctx.sendTransaction(signed)
-
-      // Return transaction as JSON string
-      signed.toJson(true)
-    })
-    txJson
+      tx
   }
 
   def main(args: Array[String]): Unit = {

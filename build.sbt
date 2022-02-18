@@ -1,6 +1,6 @@
 name := "ergo-names-backend"
 
-scalaVersion := "2.12.15"
+scalaVersion := "2.12.10"
 
 libraryDependencies += "org.ergoplatform" %% "ergo-appkit" % "dp-sigma-401-signing-func-623ece4d-SNAPSHOT"
 libraryDependencies += "com.dav009" %% "ergopilot" % "0.0.0+13-d7214d69+20220218-2155"  % Test
