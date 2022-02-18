@@ -29,13 +29,9 @@ object MintToken {
       val unspentBoxes: java.util.List[InputBox] = ctx.getUnspentBoxesFor(senderAddress, 0, 20)
       val boxesToSpend: java.util.List[InputBox] = BoxOperations.selectTop(unspentBoxes, totalToSpend)
 
-      val domainToken: ErgoToken = new ErgoToken(boxesToSpend.get(0).getId(), 1)
+       val transactionBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
 
-      val transactionBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
-
-      val outBox: OutBox = createOutBox(ctx, transactionBuilder, amountToSpend, domainToken, tokenName, tokenDescription, recieverWalletAddress)
-
-      val transaction: UnsignedTransaction = createTransaction(transactionBuilder, boxesToSpend, outBox, recieverWalletAddress)
+      val transaction = ensembleTransaction(ctx, transactionBuilder, amountToSpend, boxesToSpend, recieverWalletAddress, tokenName, tokenDescription)
 
       val signedTransaction: SignedTransaction = senderProver.sign(transaction)
 
@@ -46,7 +42,7 @@ object MintToken {
     transactionJson
   }
 
-  private def createOutBox(ctx: BlockchainContext, transactionBuilder: UnsignedTransactionBuilder, amountToSpend: Long, token: ErgoToken, tokenName: String, tokenDescription: String, recieverWalletAddress: Address): OutBox = {
+   def createOutBox(ctx: BlockchainContext, transactionBuilder: UnsignedTransactionBuilder, amountToSpend: Long, token: ErgoToken, tokenName: String, tokenDescription: String, recieverWalletAddress: Address): OutBox = {
     val outBox: OutBox = transactionBuilder.outBoxBuilder()
       .value(amountToSpend)
       .mintToken(token, tokenName, tokenDescription, 0)
@@ -59,9 +55,19 @@ object MintToken {
       .build()
 
       return outBox
+   }
+
+  def ensembleTransaction(ctx: BlockchainContext, transactionBuilder: UnsignedTransactionBuilder, amountToSpend: Long,  boxesToSpend: java.util.List[InputBox], recieverWalletAddress: Address, tokenName: String, tokenDescription: String) = {
+      val domainToken: ErgoToken = new ErgoToken(boxesToSpend.get(0).getId(), 1)
+
+     
+
+      val outBox: OutBox = createOutBox(ctx, transactionBuilder, amountToSpend, domainToken, tokenName, tokenDescription, recieverWalletAddress)
+
+    createTransaction(transactionBuilder, boxesToSpend, outBox, recieverWalletAddress)
   }
 
-  private def createTransaction(transactionBuilder: UnsignedTransactionBuilder, boxesToSpend: java.util.List[InputBox], outBox: OutBox, recieverWalletAddress: Address): UnsignedTransaction = {
+  def createTransaction(transactionBuilder: UnsignedTransactionBuilder, boxesToSpend: java.util.List[InputBox], outBox: OutBox, recieverWalletAddress: Address): UnsignedTransaction = {
     val transaction: UnsignedTransaction = transactionBuilder
       .boxesToSpend(boxesToSpend)
       .outputs(outBox)
