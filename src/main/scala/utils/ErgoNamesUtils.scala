@@ -1,5 +1,6 @@
 package utils
 
+import contracts.ErgoNamesMintingContract
 import org.ergoplatform.{ErgoAddress, P2PKAddress}
 import org.ergoplatform.appkit.config.ErgoNodeConfig
 import org.ergoplatform.appkit._
@@ -17,6 +18,7 @@ object ErgoNamesUtils {
     RestApiErgoClient.create(nodeConf, RestApiErgoClient.getDefaultExplorerUrl(networkType))
   }
 
+
   def buildProver(ctx: BlockchainContext, nodeConf: ErgoNodeConfig): ErgoProver = {
     ctx.newProverBuilder
       .withMnemonic(
@@ -32,10 +34,16 @@ object ErgoNamesUtils {
     wallet.getUnspentBoxes(totalToSpend)
   }
 
-  def buildContractBox(ctx: BlockchainContext, amountToSend: Long, script: String, ergoNamesPk: ProveDlog): (OutBox, ErgoContract) = {
+  def contract(ctx: BlockchainContext, ergoNamesPk: ProveDlog) = {
+    val script = ErgoNamesMintingContract.getScript
     val compiledContract: ErgoContract = ctx.compileContract(
-        ConstantsBuilder.create().item("ergoNamesPk", ergoNamesPk).build(),
-        script)
+      ConstantsBuilder.create().item("ergoNamesPk", ergoNamesPk).build(),
+      script)
+    compiledContract  
+}
+
+  def buildContractBox(ctx: BlockchainContext, amountToSend: Long, script: String, ergoNamesPk: ProveDlog): (OutBox, ErgoContract) = {
+    val compiledContract: ErgoContract = contract(ctx, ergoNamesPk)
 
     val b = ctx.newTxBuilder.outBoxBuilder
       .value(amountToSend)
